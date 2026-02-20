@@ -8,9 +8,9 @@ export async function GET() {
     const filename = `PalletScan_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`;
 
     // Convert Node Buffer to Uint8Array for NextResponse
-    const uint8 = new Uint8Array(buffer);
+    const arrayBuffer = new Uint8Array(buffer).buffer;
 
-    return new NextResponse(uint8, {
+    return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
         "Content-Type":
