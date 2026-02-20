@@ -8,14 +8,14 @@ export function useScanner(
   enabled: boolean,
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const readerRef = useRef<unknown>(null);
+  const readerRef = useRef<any>(null);
   const [state, setState] = useState<ScannerState>("idle");
-  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const stop = useCallback(() => {
     if (readerRef.current) {
       try {
-        (readerRef.current as any).reset();
+        readerRef.current.reset();
       } catch (_) {}
       readerRef.current = null;
     }
@@ -39,37 +39,33 @@ export function useScanner(
       const reader = new ZXing.BrowserMultiFormatReader(hints);
       readerRef.current = reader;
 
-      // ✅ TypeScript-safe cast
       const devices = await (
         ZXing.BrowserCodeReader as any
       ).listVideoInputDevices();
+      console.log("Detected cameras:", devices);
 
       const device =
-        devices.find(
-          (d: any) =>
-            d.label.toLowerCase().includes("back") ||
-            d.label.toLowerCase().includes("rear") ||
-            d.label.toLowerCase().includes("environment"),
-        ) ?? devices[devices.length - 1];
+        devices.find((d: any) => /back|rear|environment/i.test(d.label)) ??
+        devices[devices.length - 1];
+
+      if (!device) throw new Error("No camera detected");
 
       await reader.decodeFromVideoDevice(
-        device?.deviceId,
+        device.deviceId,
         videoRef.current!,
         (result, err) => {
-          if (result) {
-            onScan(result.getText());
-          }
+          if (result) onScan(result.getText());
           if (err && !(err instanceof ZXing.NotFoundException)) {
-            console.warn("Scanner decode error:", err);
+            console.warn("Decode error:", err);
           }
         },
       );
 
       setState("scanning");
-    } catch (e) {
+    } catch (e: any) {
       console.error("Scanner init error:", e);
       setErrorMsg(
-        e instanceof Error && e.message.includes("Permission")
+        e.message.includes("Permission")
           ? "Camera permission denied. Please allow camera access."
           : "Camera unavailable. Use manual input below.",
       );
@@ -78,11 +74,8 @@ export function useScanner(
   }, [onScan]);
 
   useEffect(() => {
-    if (enabled) {
-      start();
-    } else {
-      stop();
-    }
+    if (enabled) start();
+    else stop();
     return stop;
   }, [enabled, start, stop]);
 
