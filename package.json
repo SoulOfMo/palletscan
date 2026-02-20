@@ -1,0 +1,41 @@
+
+{
+  "name": "palletscan",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "drizzle-orm": "^0.31.4",
+    "postgres": "^3.4.4",
+    "xlsx": "^0.18.5",
+    "@zxing/library": "^0.19.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "sonner": "^1.5.0",
+    "lucide-react": "^0.395.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5",
+    "drizzle-kit": "^0.22.8",
+    "dotenv": "^16.4.5",
+    "tailwindcss": "^3.4.1",
+    "postcss": "^8",
+    "autoprefixer": "^10",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5"
+  }
+}
