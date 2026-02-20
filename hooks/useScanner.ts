@@ -1,9 +1,12 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import {useState, useEffect, useRef, useCallback} from "react";
 
 export type ScannerState = "idle" | "loading" | "scanning" | "error";
 
-export function useScanner(onScan: (barcode: string) => void, enabled: boolean) {
+export function useScanner(
+  onScan: (barcode: string) => void,
+  enabled: boolean,
+) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<unknown>(null);
   const [state, setState] = useState<ScannerState>("idle");
@@ -12,7 +15,6 @@ export function useScanner(onScan: (barcode: string) => void, enabled: boolean) 
   const stop = useCallback(() => {
     if (readerRef.current) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (readerRef.current as any).reset();
       } catch (_) {}
       readerRef.current = null;
@@ -22,7 +24,6 @@ export function useScanner(onScan: (barcode: string) => void, enabled: boolean) 
 
   const start = useCallback(async () => {
     setState("loading");
-    // Dynamic import to avoid SSR issues
     try {
       const ZXing = await import("@zxing/library");
       const hints = new Map();
@@ -38,13 +39,17 @@ export function useScanner(onScan: (barcode: string) => void, enabled: boolean) 
       const reader = new ZXing.BrowserMultiFormatReader(hints);
       readerRef.current = reader;
 
-      const devices = await ZXing.BrowserCodeReader.listVideoInputDevices();
-      // Prefer back camera on mobile
+      // ✅ TypeScript-safe cast
+      const devices = await (
+        ZXing.BrowserCodeReader as any
+      ).listVideoInputDevices();
+
       const device =
-        devices.find((d) =>
-          d.label.toLowerCase().includes("back") ||
-          d.label.toLowerCase().includes("rear") ||
-          d.label.toLowerCase().includes("environment")
+        devices.find(
+          (d: any) =>
+            d.label.toLowerCase().includes("back") ||
+            d.label.toLowerCase().includes("rear") ||
+            d.label.toLowerCase().includes("environment"),
         ) ?? devices[devices.length - 1];
 
       await reader.decodeFromVideoDevice(
@@ -57,15 +62,16 @@ export function useScanner(onScan: (barcode: string) => void, enabled: boolean) 
           if (err && !(err instanceof ZXing.NotFoundException)) {
             console.warn("Scanner decode error:", err);
           }
-        }
+        },
       );
+
       setState("scanning");
     } catch (e) {
       console.error("Scanner init error:", e);
       setErrorMsg(
         e instanceof Error && e.message.includes("Permission")
           ? "Camera permission denied. Please allow camera access."
-          : "Camera unavailable. Use manual input below."
+          : "Camera unavailable. Use manual input below.",
       );
       setState("error");
     }
@@ -80,5 +86,5 @@ export function useScanner(onScan: (barcode: string) => void, enabled: boolean) 
     return stop;
   }, [enabled, start, stop]);
 
-  return { videoRef, state, errorMsg };
+  return {videoRef, state, errorMsg};
 }
