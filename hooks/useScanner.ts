@@ -26,6 +26,8 @@ export function useScanner(
     setState("loading");
     try {
       const ZXing = await import("@zxing/library");
+
+      // Setup the barcode formats you want to scan
       const hints = new Map();
       hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
         ZXing.BarcodeFormat.CODE_128,
@@ -39,16 +41,16 @@ export function useScanner(
       const reader = new ZXing.BrowserMultiFormatReader(hints);
       readerRef.current = reader;
 
-      const devices = await (
-        ZXing.BrowserCodeReader as any
-      ).listVideoInputDevices();
-      console.log("Detected cameras:", devices);
+      // ✅ List cameras using standard web API
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter((d) => d.kind === "videoinput");
 
+      if (videoDevices.length === 0) throw new Error("No camera found");
+
+      // Prefer back/rear camera
       const device =
-        devices.find((d: any) => /back|rear|environment/i.test(d.label)) ??
-        devices[devices.length - 1];
-
-      if (!device) throw new Error("No camera detected");
+        videoDevices.find((d) => /back|rear|environment/i.test(d.label)) ??
+        videoDevices[videoDevices.length - 1];
 
       await reader.decodeFromVideoDevice(
         device.deviceId,
