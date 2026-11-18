@@ -3,12 +3,30 @@ export const revalidate = 0;
 
 import {NextResponse} from "next/server";
 import {generateExcelBuffer} from "@/lib/services/exportService";
+import {getPalletById} from "@/lib/services/palletService";
 import {format} from "date-fns";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const buffer = await generateExcelBuffer();
-    const filename = `PalletScan_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`;
+    const url = new URL(req.url);
+    const palletIdParam = url.searchParams.get("palletId");
+    let palletId: number | undefined;
+
+    if (palletIdParam !== null) {
+      palletId = Number(palletIdParam);
+      if (!Number.isInteger(palletId) || palletId < 1) {
+        return NextResponse.json({ error: "Invalid pallet ID" }, { status: 400 });
+      }
+      const pallet = await getPalletById(palletId);
+      if (!pallet) {
+        return NextResponse.json({ error: "Pallet not found" }, { status: 404 });
+      }
+    }
+
+    const buffer = await generateExcelBuffer(palletId);
+    const filename = palletId
+      ? `Pallet_${palletId}_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`
+      : `PalletScan_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`;
 
     // Preserve exactly the bytes produced by XLSX, including Buffer offsets.
     const arrayBuffer = buffer.buffer.slice(

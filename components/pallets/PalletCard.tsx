@@ -1,10 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import type { Item, PalletWithCount } from "@/lib/db/schema";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { downloadBlob } from "@/lib/utils/download";
 
 interface PalletCardProps {
   pallet: PalletWithCount;
@@ -35,6 +37,28 @@ export function PalletCard({ pallet, isActive, onSetActive, onDelete }: PalletCa
       if (res.ok) setPalletItems(await res.json());
     } finally {
       setLoadingItems(false);
+    }
+  }
+
+  async function exportPallet(event: MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    try {
+      const res = await fetch(
+        `/api/export?palletId=${pallet.id}&ts=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error ?? "Export failed");
+        return;
+      }
+
+      const blob = await res.blob();
+      const safePalletNumber = pallet.palletNumber.replace(/[<>:"/\\|?*]/g, "_");
+      downloadBlob(blob, `${safePalletNumber}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success(`${pallet.palletNumber} exported!`);
+    } catch {
+      toast.error("Export failed");
     }
   }
 
@@ -111,18 +135,29 @@ export function PalletCard({ pallet, isActive, onSetActive, onDelete }: PalletCa
           </div>
 
           <div className="flex gap-2 p-3">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={exportPallet}
+            >
+              EXPORT XLSX
+            </Button>
             {!isActive && !isFull && (
               <Button
                 variant="primary"
                 className="flex-1"
-                onClick={() => onSetActive(pallet)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSetActive(pallet);
+                }}
               >
                 SET ACTIVE
               </Button>
             )}
             <Button
               variant="danger"
-              onClick={() => {
+              onClick={(event) => {
+                event.stopPropagation();
                 if (confirm(`Delete ${pallet.palletNumber} and ALL its items?`)) {
                   onDelete(pallet.id);
                 }

@@ -1,10 +1,21 @@
 import * as XLSX from "xlsx";
-import { getAllPallets } from "./palletService";
+import { getAllPallets, getPalletById } from "./palletService";
 import { getItemsByPallet } from "./itemService";
 import { format } from "date-fns";
+import type { PalletWithCount } from "@/lib/db/schema";
 
-export async function generateExcelBuffer(): Promise<Buffer> {
-  const pallets = await getAllPallets();
+export async function generateExcelBuffer(palletId?: number): Promise<Buffer> {
+  let pallets: PalletWithCount[];
+
+  if (palletId !== undefined) {
+    const pallet = await getPalletById(palletId);
+    if (!pallet) {
+      throw new Error("Pallet not found");
+    }
+    pallets = [{ ...pallet, itemCount: 0 }];
+  } else {
+    pallets = await getAllPallets();
+  }
 
   if (pallets.length === 0) {
     throw new Error("No pallets to export");
