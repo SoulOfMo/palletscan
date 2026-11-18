@@ -3,6 +3,7 @@ import { PalletCard } from "@/components/pallets/PalletCard";
 import { Button } from "@/components/ui/Button";
 import type { PalletWithCount } from "@/lib/db/schema";
 import { toast } from "sonner";
+import { downloadBlob } from "@/lib/utils/download";
 
 interface PalletsViewProps {
   pallets: PalletWithCount[];
@@ -13,15 +14,15 @@ interface PalletsViewProps {
 
 async function handleExport() {
   try {
-    const res = await fetch("/api/export");
+    const res = await fetch(`/api/export?ts=${Date.now()}`, {
+      cache: "no-store",
+    });
     if (!res.ok) { toast.error("Export failed"); return; }
     const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `PalletScan_${new Date().toISOString().slice(0,10)}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(
+      blob,
+      `PalletScan_${new Date().toISOString().slice(0,10)}.xlsx`
+    );
     toast.success("Excel downloaded!");
   } catch {
     toast.error("Export failed");

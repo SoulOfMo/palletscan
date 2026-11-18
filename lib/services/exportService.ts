@@ -32,7 +32,10 @@ export async function generateExcelBuffer(): Promise<Buffer> {
     ws["A1"].s = { font: { bold: true }, fill: { fgColor: { rgb: "003018" } } };
     ws["B1"].s = { font: { bold: true } };
 
-    XLSX.utils.book_append_sheet(wb, ws, pallet.palletNumber);
+    const sheetName = pallet.palletNumber
+      .replace(/[\\/?*[\]:]/g, "_")
+      .slice(0, 31);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName || `Pallet_${pallet.id}`);
   }
 
   const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });

@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import {NextResponse} from "next/server";
 import {generateExcelBuffer} from "@/lib/services/exportService";
 import {format} from "date-fns";
@@ -7,15 +10,19 @@ export async function GET() {
     const buffer = await generateExcelBuffer();
     const filename = `PalletScan_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`;
 
-    // Convert Node Buffer to Uint8Array for NextResponse
-    const arrayBuffer = new Uint8Array(buffer).buffer;
+    // Preserve exactly the bytes produced by XLSX, including Buffer offsets.
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    ) as ArrayBuffer;
 
     return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename=${filename}`,
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (err: unknown) {

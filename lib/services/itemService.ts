@@ -53,8 +53,7 @@ export async function addItem(
   } catch (err: unknown) {
     // Catch DB-level unique violation (race condition safety)
     if (
-      err instanceof Error &&
-      err.message.includes("unique") || 
+      (err instanceof Error && err.message.includes("unique")) ||
       (err as { code?: string }).code === "23505"
     ) {
       return { success: false, error: "duplicate", existingPallet: "Unknown" };

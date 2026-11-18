@@ -1,5 +1,8 @@
-import { NextResponse } from "next/server";
-import { getAllPallets, createPallet } from "@/lib/services/palletService";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+import {NextResponse} from "next/server";
+import {getAllPallets, createPallet} from "@/lib/services/palletService";
 
 export async function GET() {
   try {
@@ -7,7 +10,7 @@ export async function GET() {
     return NextResponse.json(pallets);
   } catch (err) {
     console.error("[GET /api/pallets]", err);
-    return NextResponse.json({ error: "Failed to fetch pallets" }, { status: 500 });
+    return NextResponse.json({error: "Failed to fetch pallets"}, {status: 500});
   }
 }
 
@@ -18,15 +21,15 @@ export async function POST(req: Request) {
 
     if (maxItems < 1 || maxItems > 9999) {
       return NextResponse.json(
-        { error: "maxItems must be between 1 and 9999" },
-        { status: 400 }
+        {error: "maxItems must be between 1 and 9999"},
+        {status: 400},
       );
     }
 
     const pallet = await createPallet(maxItems);
-    return NextResponse.json(pallet, { status: 201 });
+    return NextResponse.json(pallet, {status: 201});
   } catch (err) {
     console.error("[POST /api/pallets]", err);
-    return NextResponse.json({ error: "Failed to create pallet" }, { status: 500 });
+    return NextResponse.json({error: "Failed to create pallet"}, {status: 500});
   }
 }
